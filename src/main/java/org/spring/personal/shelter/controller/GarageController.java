@@ -1,15 +1,40 @@
 package org.spring.personal.shelter.controller;
 
 import org.spring.personal.shelter.model.Car;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.spring.personal.shelter.service.GarageService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class GarageController {
 
-    @RequestMapping("/car")
-    public Car getCar(){
-        Car myCar = new Car("Picasso", "Citroen", 2004, Car.Color.RED);
-        return myCar;
+    @Autowired
+    private GarageService garageService;
+
+    @RequestMapping(method = RequestMethod.GET, value = "/cars")
+    public List<Car> getCar(){
+        return garageService.getCars();
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/car/{id}")
+    public Car getCar(@PathVariable long id){
+        return garageService.getCar(id);
+    }
+
+    @RequestMapping(method = RequestMethod.DELETE, value = "/car/{id}")
+    public void deleteCar(@PathVariable long id){
+        garageService.deleteCar(id);
+    }
+
+    @RequestMapping(method = RequestMethod.POST, value = "/cars")
+    public void addCar(@RequestBody Car car){
+        garageService.addCar(car);
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "/car/{id}")
+    public void updateCar(@RequestBody Car car, @PathVariable long id){
+        garageService.updateCar(car, id);
     }
 }
