@@ -1,5 +1,9 @@
 package org.spring.personal.shelter.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
+@Entity
 public class Car {
 
     public enum Color{
@@ -9,6 +13,7 @@ public class Car {
         YELLOW
     }
 
+    @Id
     private long id;
     private String model;
     private String brand;
