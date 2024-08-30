@@ -5,20 +5,20 @@ const router = express.Router();
 
 // Inscription
 router.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url } = req.body;
+    const password_hash = await bcrypt.hash(password, 10); // Hachage du mot de passe
 
     try {
-        // Hachage du mot de passe
-        const passwordHash = await bcrypt.hash(password, 10);
-
         const [result] = await pool.query(
-            'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-            [username, email, passwordHash]
+            `INSERT INTO users (username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url]
         );
-        res.status(201).json({ message: 'User registered successfully' });
-    } catch (err) {
-        console.error("Error during registration", err);
-        res.status(500).json({ error: err.message });
+
+        res.status(201).json({ message: 'User registered successfully', userId: result.insertId });
+    } catch (error) {
+        console.error('Error during user registration:', error);
+        res.status(500).send('Server error');
     }
 });
 
