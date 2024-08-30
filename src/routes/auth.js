@@ -54,6 +54,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Sélectionner un utilisateur
 router.get('/profile/:userId', async (req, res) => {
     const userId = req.params.userId;
     try {
@@ -65,6 +66,24 @@ router.get('/profile/:userId', async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching user data:', error);
+        res.status(500).send('Server error');
+    }
+});
+
+// Désinscription de l'utilisateur
+router.delete('/unsubscribe/:userId', async (req, res) => {
+    const userId = req.params.userId;
+
+    try {
+        const [result] = await pool.query('DELETE FROM users WHERE id = ?', [userId]);
+
+        if (result.affectedRows > 0) {
+            res.status(200).send('User unsubscribed successfully');
+        } else {
+            res.status(404).send('User not found');
+        }
+    } catch (error) {
+        console.error('Error during unsubscribe:', error);
         res.status(500).send('Server error');
     }
 });
