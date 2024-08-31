@@ -83,7 +83,25 @@ router.put('/profile/:userId', async (req, res) => {
 router.get('/profile/:userId', async (req, res) => {
     const userId = req.params.userId;
     try {
-        const [rows] = await pool.query('SELECT username, email FROM users WHERE id = ?', [userId]);
+        // Met à jour la requête SQL pour inclure toutes les colonnes nécessaires
+        const [rows] = await pool.query(`
+            SELECT 
+                username, 
+                email, 
+                password_hash, 
+                birthday, 
+                secondary_email, 
+                first_name, 
+                last_name, 
+                postal_address, 
+                phone_number, 
+                indicatif, 
+                profile_picture_url 
+            FROM users 
+            WHERE id = ?`, 
+            [userId]
+        );
+
         if (rows.length > 0) {
             res.json(rows[0]);
         } else {
@@ -94,6 +112,7 @@ router.get('/profile/:userId', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
 
 // Désinscription de l'utilisateur
 router.delete('/unsubscribe/:userId', async (req, res) => {
