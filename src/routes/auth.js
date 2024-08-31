@@ -54,6 +54,31 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Mise à jour des informations de l'utilisateur
+router.put('/profile/:userId', async (req, res) => {
+    const userId = req.params.userId;
+    const { username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url } = req.body;
+
+    try {
+        const [result] = await pool.query(
+            `UPDATE users
+            SET username = ?, email = ?, birthday = ?, secondary_email = ?, first_name = ?, last_name = ?, postal_address = ?, phone_number = ?, profile_picture_url = ?
+            WHERE id = ?`,
+            [username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).send('User not found');
+        }
+
+        res.status(200).send('User updated successfully');
+    } catch (error) {
+        console.error('Error updating user data:', error);
+        res.status(500).send('Server error');
+    }
+});
+
+
 // Sélectionner un utilisateur
 router.get('/profile/:userId', async (req, res) => {
     const userId = req.params.userId;
