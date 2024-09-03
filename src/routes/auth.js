@@ -5,14 +5,15 @@ const router = express.Router();
 
 // Inscription
 router.post('/register', async (req, res) => {
-    const { username, email, password, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url } = req.body;
+    const { username, email, password, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code } = req.body;
     const password_hash = await bcrypt.hash(password, 10); // Hachage du mot de passe
+    const dial_code_temp = "+33"; // Indicatif temporaire
 
     try {
         const [result] = await pool.query(
-            `INSERT INTO users (username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url, created_at)
+            `INSERT INTO users (username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url]
+            [username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code_temp]
         );
 
         res.status(201).json({ message: 'User registered successfully', userId: result.insertId });
@@ -57,14 +58,14 @@ router.post('/login', async (req, res) => {
 // Mise à jour des informations de l'utilisateur
 router.put('/profile/:userId', async (req, res) => {
     const userId = req.params.userId;
-    const { username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url } = req.body;
+    const { username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code } = req.body;
 
     try {
         const [result] = await pool.query(
             `UPDATE users
-            SET username = ?, email = ?, birthday = ?, secondary_email = ?, first_name = ?, last_name = ?, postal_address = ?, phone_number = ?, profile_picture_url = ?
+            SET username = ?, email = ?, birthday = ?, secondary_email = ?, first_name = ?, last_name = ?, postal_address = ?, phone_number = ?, dial_code = ?
             WHERE id = ?`,
-            [username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, profile_picture_url, userId]
+            [username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code, userId]
         );
 
         if (result.affectedRows === 0) {
@@ -95,7 +96,7 @@ router.get('/profile/:userId', async (req, res) => {
                 last_name, 
                 postal_address, 
                 phone_number, 
-                indicatif, 
+                dial_code, 
                 profile_picture_url 
             FROM users 
             WHERE id = ?`, 
