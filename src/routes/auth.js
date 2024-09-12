@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const pool = require('../config/db');
+const User = require('../models/User');
 const router = express.Router();
 
 // Inscription
@@ -10,13 +10,20 @@ router.post('/register', async (req, res) => {
     const dial_code_temp = "+33"; // Indicatif temporaire
 
     try {
-        const [result] = await pool.query(
-            `INSERT INTO users (username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [username, email, password_hash, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code_temp]
-        );
+        const user = await User.create({
+            username,
+            email,
+            password_hash,
+            birthday,
+            secondary_email,
+            first_name,
+            last_name,
+            postal_address,
+            phone_number,
+            dial_code: dial_code_temp,
+        });
 
-        res.status(201).json({ message: 'User registered successfully', userId: result.insertId });
+        res.status(201).json({ message: 'User registered successfully', userId: user.id });
     } catch (error) {
         console.error('Error during user registration:', error);
         res.status(500).send('Server error');
@@ -28,20 +35,15 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // Rechercher l'utilisateur par son nom d'utilisateur
-        const [rows] = await pool.query('SELECT id, username, password_hash FROM users WHERE username = ?', [username]);
+        const user = await User.findOne({ where: { username } });
 
-        // Vérifier si l'utilisateur existe
-        if (rows.length > 0) {
-            const user = rows[0];
-
-            // Comparer le mot de passe fourni avec le mot de passe haché stocké
+        if (user) {
             const match = await bcrypt.compare(password, user.password_hash);
 
             if (match) {
                 res.json({
                     userId: user.id,
-                    username: user.username
+                    username: user.username,
                 });
             } else {
                 res.status(401).send('Invalid credentials');
@@ -61,50 +63,47 @@ router.put('/profile/:userId', async (req, res) => {
     const { username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code } = req.body;
 
     try {
-        const [result] = await pool.query(
-            `UPDATE users
-            SET username = ?, email = ?, birthday = ?, secondary_email = ?, first_name = ?, last_name = ?, postal_address = ?, phone_number = ?, dial_code = ?
-            WHERE id = ?`,
-            [username, email, birthday, secondary_email, first_name, last_name, postal_address, phone_number, dial_code, userId]
+        const [updated] = await User.update(
+            {
+                username,
+                email,
+                birthday,
+                secondary_email,
+                first_name,
+                last_name,
+                postal_address,
+                phone_number,
+                dial_code,
+            },
+            { where: { id: userId } }
         );
 
-        if (result.affectedRows === 0) {
-            return res.status(404).send('User not found');
+        if (updated) {
+            res.status(200).send('User updated successfully');
+        } else {
+            res.status(404).send('User not found');
         }
-
-        res.status(200).send('User updated successfully');
     } catch (error) {
         console.error('Error updating user data:', error);
         res.status(500).send('Server error');
     }
 });
 
-
 // Sélectionner un utilisateur
 router.get('/profile/:userId', async (req, res) => {
     const userId = req.params.userId;
-    try {
-        // Met à jour la requête SQL pour inclure toutes les colonnes nécessaires
-        const [rows] = await pool.query(`
-            SELECT 
-                username, 
-                email, 
-                password_hash, 
-                birthday, 
-                secondary_email, 
-                first_name, 
-                last_name, 
-                postal_address, 
-                phone_number, 
-                dial_code, 
-                profile_picture_url 
-            FROM users 
-            WHERE id = ?`, 
-            [userId]
-        );
 
-        if (rows.length > 0) {
-            res.json(rows[0]);
+    try {
+        const user = await User.findOne({
+            where: { id: userId },
+            attributes: [
+                'username', 'email', 'birthday', 'secondary_email', 'first_name', 
+                'last_name', 'postal_address', 'phone_number', 'dial_code', 'profile_picture_url'
+            ],
+        });
+
+        if (user) {
+            res.json(user);
         } else {
             res.status(404).send('User not found');
         }
@@ -114,15 +113,14 @@ router.get('/profile/:userId', async (req, res) => {
     }
 });
 
-
 // Désinscription de l'utilisateur
 router.delete('/unsubscribe/:userId', async (req, res) => {
     const userId = req.params.userId;
 
     try {
-        const [result] = await pool.query('DELETE FROM users WHERE id = ?', [userId]);
+        const deleted = await User.destroy({ where: { id: userId } });
 
-        if (result.affectedRows > 0) {
+        if (deleted) {
             res.status(200).send('User unsubscribed successfully');
         } else {
             res.status(404).send('User not found');
@@ -132,6 +130,5 @@ router.delete('/unsubscribe/:userId', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
-
 
 module.exports = router;
