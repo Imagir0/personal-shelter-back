@@ -8,7 +8,7 @@ const router = express.Router();
 // Configuration de multer pour enregistrer les fichiers dans le répertoire 'uploads'
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, '../../uploads')); // Chemin où l'image sera stockée
+        cb(null, path.join(__dirname, '../uploads')); // Chemin où l'image sera stockée
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -22,7 +22,7 @@ const upload = multer({ storage: storage });
 router.post('/', upload.single('profile_picture'), async (req, res) => {
     try {
         const userId = req.body.userId; // Assurez-vous que l'ID utilisateur est envoyé avec la requête
-        const profilePicturePath = `../../uploads/${req.file.filename}`;
+        const profilePicturePath = `/${req.file.filename}`;
 
         // Mettre à jour l'utilisateur avec le chemin de l'image
         const user = await User.findByPk(userId);
